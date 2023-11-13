@@ -75,7 +75,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public long drives = 0;
     private GobRadius radius = null;
     private long eseq = 0;
-    private GobOpeningOverlay openings;
     
     public static final ChangeCallback CHANGED = new ChangeCallback() {
 	@Override
@@ -502,6 +501,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	info = new GeneralGobInfo(this);
 	setattr(info);
 	updwait(this::drawableUpdated, waiting -> {});
+	GobCombatInfo.check(this);
     }
 
     public Gob(Glob glob, Coord2d c) {
@@ -672,25 +672,11 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	damage = null;
     }
     
-    private void addOpenings() {
-	this.openings = new GobOpeningOverlay(this);
-	setattr((Class)GobOpeningOverlay.class, (GAttrib)this.openings);
+    public void addCombatInfo(Fightview.Relation rel) {
+	setattr(GobCombatInfo.class, new GobCombatInfo(this, rel));
     }
     
-    public void proccessOpenings(Fightview.Relation rel) {
-	if (openings == null) {
-	    addOpenings();
-	}
-	rel.openings = openings;
-	openings.update(rel);
-    }
-    
-    public void clearOpenings() {
-	setattr((Class)GobOpeningOverlay.class, null);
-	openings = null;
-    }
-    
-    public void rclick() {
+    public void rclick(int modflags) {
 	try {
 	    MapView map = glob.sess.ui.gui.map;
 	    map.click(this, 3, Coord.z);

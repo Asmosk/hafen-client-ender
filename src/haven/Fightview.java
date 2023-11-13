@@ -26,6 +26,8 @@
 
 package haven;
 
+import me.ender.gob.GobCombatInfo;
+
 import java.util.*;
 import static haven.Utils.uint32;
 
@@ -45,6 +47,13 @@ public class Fightview extends Widget {
     public Relation current = null;
     public Indir<Resource> blk, batk, iatk;
     public double atkcs, atkct;
+    
+    @Override
+    public void remove() {
+	GobCombatInfo.clear();
+	super.remove();
+    }
+    
     public Indir<Resource> lastact = null;
     public double lastuse = 0;
     public Mainrel curdisp;
@@ -323,6 +332,7 @@ public class Fightview extends Widget {
 	    rel.ip = (Integer)args[2];
 	    rel.oip = (Integer)args[3];
             lsrel.addFirst(rel);
+	    GobCombatInfo.add(rel, ui);
 	    updrel();
 	    if(rel.gst == 0 && CFG.COMBAT_AUTO_PEACE.get()) {
 		wdgmsg("give", (int)rel.gobid, 1);
@@ -333,6 +343,7 @@ public class Fightview extends Widget {
             return;
         } else if(msg == "del") {
             Relation rel = getrel(uint32((Integer)args[0]));
+	    GobCombatInfo.del(rel, ui);
 	    rel.remove();
             lsrel.remove(rel);
 	    if(rel == current)
