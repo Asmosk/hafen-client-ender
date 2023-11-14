@@ -32,6 +32,8 @@ import java.util.function.*;
 import haven.render.*;
 import haven.res.gfx.fx.msrad.MSRad;
 import integrations.mapv4.MappingClient;
+import me.ender.ResName;
+import me.ender.gob.GobCombatInfo;
 import me.ender.minimap.AutoMarkers;
 
 import static haven.OCache.*;
@@ -167,7 +169,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    if(slots != null)
 		slots.remove(slot);
 	}
- 
+	
 	public String name() {
 	    try {
 		if(res != null)
@@ -183,7 +185,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     private static class CustomColor implements SetupMod {
 	Pipe.Op op = null;
 	Color c = null;
-    
+
 	void color(Color c) {
 	    if(Objects.equals(c, this.c)) {
 		return;
@@ -907,6 +909,20 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     protected void obstate(Pipe buf) {
     }
 
+    private boolean simplifyClick(Gob.Overlay overlay) {
+	if(!is(GobTag.CONTAINER) || !CFG.DECAL_SHIFT_PICKUP.get()) {return false;}
+	
+	UI ui = context(UI.class);
+	if(ui == null) {return false;}
+	
+	String name = overlay.name();
+	if(ResName.DECAL.equals(name)) {
+	    return !ui.modctrl && !ui.modshift;
+	}
+	
+	return false;
+    }
+
     private class GobState implements Pipe.Op {
 	final Pipe.Op mods;
 
@@ -1050,9 +1066,14 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	return null;
     }
     
+    public String inspect() {
+	return resid();
+    }
+    
     private static final ClassResolver<Gob> ctxr = new ClassResolver<Gob>()
 	.add(Gob.class, g -> g)
 	.add(Glob.class, g -> g.glob)
+	.add(UI.class, g -> g.glob.sess.ui)
 	.add(GameUI.class, g -> (g.glob.sess.ui != null) ? g.glob.sess.ui.gui : null)
 	.add(MapWnd2.class, g -> (g.glob.sess.ui != null && g.glob.sess.ui.gui != null) ? g.glob.sess.ui.gui.mapfile : null)
 	.add(Session.class, g -> g.glob.sess);
