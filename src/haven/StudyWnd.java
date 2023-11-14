@@ -1,10 +1,87 @@
 package haven;
 
 import haven.resutil.Curiosity;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class StudyWnd extends GameUI.Hidewnd {
     InventoryProxy study;
     StudyInfo info;
+    
+    private static final File CURIO_DATA_FILE = new File("curio_data.json");
+    public static class CurioInfo {
+	public String name;
+	public double quality;
+	public int learningPoints;
+	public int time;
+	public int mentalWeight;
+	public int sizeX;
+	public int sizeY;
+	
+	public CurioInfo(WItem item) {
+	    name = item.name.get();
+	    quality = item.quantity.get();
+	    learningPoints = item.curio.get().exp;
+	    time = item.curio.get().time;
+	    mentalWeight = item.curio.get().mw;
+	    sizeX = item.lsz.x;
+	    sizeY = item.lsz.y;
+	}
+	
+	public int area() { return sizeX * sizeY; }
+	
+	public double lpt() { return (double) learningPoints / time; }
+	
+	
+	public JSONObject toJson() {
+	    
+	    JSONObject sizeJson = new JSONObject();
+	    sizeJson.put("X", sizeX);
+	    sizeJson.put("Y", sizeY);
+	    
+	    JSONObject curioJson = new JSONObject();
+	    curioJson.put("Quality", quality);
+	    curioJson.put("LearningPoints", learningPoints);
+	    curioJson.put("Time", time);
+	    curioJson.put("MentalWeight", mentalWeight);
+	    curioJson.put("Size", sizeJson);
+	    
+	    return curioJson;
+	}
+	
+	public String toString() { return toJson().toString(); }
+    }
+    
+    public static final Map<String, CurioInfo> KnownCurios = new HashMap<>();
+    
+    private static void saveCurioLog() {
+	if (!CURIO_DATA_FILE.exists())
+	    try {
+		CURIO_DATA_FILE.createNewFile();
+	    } catch (IOException e) {
+		e.printStackTrace();
+	    }
+	
+	JSONObject completeList = new JSONObject();
+	for (Map.Entry<String, CurioInfo> entry : KnownCurios.entrySet())
+	    completeList.put(entry.getKey(), entry.getValue().toJson());
+	
+	try (FileWriter fileWriter = new FileWriter((CURIO_DATA_FILE))) {
+	    fileWriter.write(completeList.toString());
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+    }
+    
+    public static void logCurio(CurioInfo curioInfo) {
+	KnownCurios.put(curioInfo.name, curioInfo);
+	saveCurioLog();
+    }
 
 
     StudyWnd() {

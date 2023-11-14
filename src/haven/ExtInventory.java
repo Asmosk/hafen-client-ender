@@ -3,23 +3,16 @@ package haven;
 import auto.Bot;
 import haven.resutil.Curiosity;
 import haven.rx.Reactor;
-import integrations.food.FoodService;
-import org.json.JSONObject;
 import rx.Subscription;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.zip.GZIPInputStream;
 
 import static haven.Inventory.*;
+import static haven.StudyWnd.*;
 import static haven.WItem.*;
 
 public class ExtInventory extends Widget {
@@ -443,7 +436,6 @@ public class ExtInventory extends Widget {
 		this.text[0] = text[1];
 	    }
 	    this.text[2] = info(sample, quantity, text[1]);
-	    logCurio(sample);
 	    flowerSubscription = Reactor.FLOWER_CHOICE.subscribe(this::flowerChoice);
 	}
     
@@ -466,51 +458,10 @@ public class ExtInventory extends Widget {
 	    Curiosity curio = itm.curio.get();
 	    if(curio != null) {
 	        int lph = Curiosity.lph(curio.lph);
+		logCurio(new StudyWnd.CurioInfo(itm));
 	        return RichText.render(String.format("×%s lph: $col[192,255,255]{%d}  mw: $col[255,192,255]{%d}", count, lph, curio.mw), 0).tex();
 	    }
 	    return def;
-	}
-	
-	private static final File CURIO_DATA_CACHE_FILE = new File("curio_data.json");
-	private static final Map<String, JSONObject> cachedCurioItems = new HashMap<>();
-	private static void saveCurioLog() {
-	    if (!CURIO_DATA_CACHE_FILE.exists())
-		try {
-		    CURIO_DATA_CACHE_FILE.createNewFile();
-		} catch (IOException e) {
-		    e.printStackTrace();
-		}
-	    
-	    JSONObject completeList = new JSONObject();
-	    for (Map.Entry<String, JSONObject> entry : cachedCurioItems.entrySet())
-		completeList.put(entry.getKey(), entry.getValue());
-	    
-	    try (FileWriter fileWriter = new FileWriter((CURIO_DATA_CACHE_FILE))) {
-		fileWriter.write(completeList.toString());
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
-	}
-	
-	private static void logCurio(WItem itm) {
-	    Curiosity curio = itm.curio.get();
-	    
-	    if (curio == null)
-		return;
-	    
-	    JSONObject size = new JSONObject();
-	    size.put("X", itm.lsz.x);
-	    size.put("Y", itm.lsz.y);
-	    
-	    JSONObject curioJson = new JSONObject();
-	    curioJson.put("Quality", quality(itm));
-	    curioJson.put("LearningPoints", curio.exp);
-	    curioJson.put("Time", curio.time);
-	    curioJson.put("MentalWeight", curio.mw);
-	    curioJson.put("Size", size);
-	    
-	    cachedCurioItems.put(name(itm), curioJson);
-	    saveCurioLog();
 	}
 
 	@Override
