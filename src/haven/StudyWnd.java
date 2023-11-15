@@ -7,11 +7,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class StudyWnd extends GameUI.Hidewnd {
     InventoryProxy study;
@@ -26,6 +22,7 @@ public class StudyWnd extends GameUI.Hidewnd {
 	public int mentalWeight;
 	public int sizeX;
 	public int sizeY;
+	public int time;
 	
 	public CurioInfo(WItem item) {
 	    name = item.name.get();
@@ -37,21 +34,10 @@ public class StudyWnd extends GameUI.Hidewnd {
 	    }
 	    sizeX = item.lsz.x;
 	    sizeY = item.lsz.y;
-	}
-	
-	public CurioInfo(String name, int learningPoints, int mentalWeight) {
-	    this.name = name;
-	    this.quality = 10;
-	    this.mentalWeight = mentalWeight;
-	    this.sizeX = 1;
-	    this.sizeY = 1;
+	    time = item.curio.get().time;
 	}
 	
 	public int area() { return sizeX * sizeY; }
-	
-	public double valueToWeightRatio() {
-	    return (double) lph / mentalWeight;
-	}
 	
 	public JSONObject toJson() {
 	    
@@ -126,6 +112,8 @@ public class StudyWnd extends GameUI.Hidewnd {
 	
 	List<CurioInfo> curioList = new ArrayList<>(KnownCurios.values());
 	OptimalCurios = solveKnapsack(curioList, attention, 16);
+	OptimalCurios.sort(Comparator.comparing(a -> a.time));
+	Collections.reverse(OptimalCurios);
     }
     
     private static void saveCurioLog() {
