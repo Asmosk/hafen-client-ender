@@ -1460,6 +1460,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	customColor.color(c);
     }
     
+    public float scale() {return info.growthScale();}
+    
     private static class StatusUpdates {
 	private final Set<StatusType> updated = new HashSet<>();
 	
