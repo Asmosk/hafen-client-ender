@@ -939,6 +939,9 @@ public class OptWnd extends WindowX {
 	
 	y += STEP;
 	panel.add(new CFGBox("Item drop protection", CFG.ITEM_DROP_PROTECTION, "Drop items on cursor only when CTRL is pressed"), new Coord(x, y));
+ 
+	y += STEP;
+	panel.add(new CFGBox("Prevent decal click", CFG.CTRL_CLICK_DECAL, "You can only remove decals from cupboard with CTRL + right click.", true), x, y);
 	
 	y += STEP;
 	panel.add(new CFGBox("Enable path queueing", CFG.QUEUE_PATHS, "ALT+LClick will queue movement"), x, y);
@@ -1124,12 +1127,12 @@ public class OptWnd extends WindowX {
  
 	y += STEP;
 	y = addSlider(CFG.PALISADE_HEIGHT, "Wall scale", "Scale palisade and brick wall vertically, changes are applied on zone reload.", panel, x, y, STEP);
- 
-	y += STEP;
-	panel.add(new CFGBox("Floating decals on cupboards", CFG.FLOATING_DECALS, "Instaed of squishing the decals, it let's them float.", true), x, y);
 	
 	y += STEP;
-	panel.add(new CFGBox("Relocate decals", CFG.RELOCATE_DECALS, "Moves the decals down and backwards. ATTENTION: IF YOU DROP THEM, DISABLE THIS OPTION AND RELOG / CHANGE AREA.", true), x, y);
+	panel.add(new CFGBox("Relocate decals", CFG.RELOCATE_DECALS, "Moves the decals down to the back on cupboards.", true), x, y);
+	
+	y += STEP;
+	panel.add(new CFGBox("Display cracking textures", CFG.DISPLAY_CRACKING_TEXTURE, "Displays the cracking texture on damaged objects.", true), x, y);
 	
 	panel.add(new PButton(UI.scale(200), "Back", 27, main), new Coord(0, my + UI.scale(35)));
 	panel.pack();
