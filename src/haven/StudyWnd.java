@@ -14,6 +14,7 @@ public class StudyWnd extends GameUI.Hidewnd {
     StudyInfo info;
     CurioInfoWidget curioInfoWidget;
     
+    // TODO: Load saved curios and add clear button to the UI
     private static final File CURIO_DATA_FILE = new File("curio_data.json");
     public static class CurioInfo {
 	public String name;
@@ -147,6 +148,7 @@ public class StudyWnd extends GameUI.Hidewnd {
 	}
 	study = add(new InventoryProxy(inventory));
 	info = add(new StudyInfo(new Coord(study.sz.x, 66), inventory), 0, study.c.y + study.sz.y + 5);
+	// TODO: Try dynamic widget size?
 	curioInfoWidget = add(new CurioInfoWidget(new Coord(300, 400), inventory), study.c.x + study.sz.x + 5, 0);
 	pack();
     }
@@ -227,6 +229,7 @@ public class StudyWnd extends GameUI.Hidewnd {
 	private void upd() {
 	    updateOptimalCurios(ui.sess.glob.cattr.get("int").comp);
 	    maxLph = 0;
+	    // TODO: Cache this
 	    for (CurioInfo curio : OptimalCurios) {
 		maxLph += curio.lph;
 	    }
@@ -235,6 +238,8 @@ public class StudyWnd extends GameUI.Hidewnd {
 	public void draw(GOut g) {
 	    upd();
 	    super.draw(g);
+	    
+	    // TODO: Better UI
 	    
 	    Coord pos = new Coord(2, 22);
 	    int gap = 18;
