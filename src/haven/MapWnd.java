@@ -153,6 +153,11 @@ public class MapWnd extends WindowX implements Console.Directory {
 	    .state(CFG.MMAP_SHOW_MARKER_NAMES::get)
 	    .set(CFG.MMAP_SHOW_MARKER_NAMES::set)
 	    .settip("Show marker names");
+    
+	btn = topbar.add(new ICheckBox("gfx/hud/mmap/pvpmode", "", "-d", "-h"), btn.pos("ur"))
+	    .state(CFG.PVP_MAP::get)
+	    .set(CFG.PVP_MAP::set)
+	    .settip("Enable PVP Mode");
 	
 	topbar.pack();
 	tool = add(new Toolbox2());;
@@ -336,7 +341,7 @@ public class MapWnd extends WindowX implements Console.Directory {
 		    return(true);
 		}
 	    } else if(mark.m instanceof SMarker) {
-		Gob gob = MarkerID.find(ui.sess.glob.oc, ((SMarker)mark.m).oid);
+		Gob gob = MarkerID.find(ui.sess.glob.oc, ((SMarker)mark.m));
 		if(gob != null)
 		    mvclick(mv, null, loc, gob, button);
 	    }
@@ -852,11 +857,15 @@ public class MapWnd extends WindowX implements Console.Directory {
 	return(super.mousedown(c, button));
     }
 
+    private static Coord MaxSizeNonCompact = UI.scale(350,240);
+    private static Coord MaxSizeCompact = UI.scale(150,150);
     public void mousemove(Coord c) {
 	if(drag != null) {
+	    Coord size = (!tool.visible ? MaxSizeCompact : MaxSizeNonCompact);
+	    System.out.println(size);
 	    Coord nsz = c.add(dragc);
-	    nsz.x = Math.max(nsz.x, UI.scale(350));
-	    nsz.y = Math.max(nsz.y, UI.scale(240));
+	    nsz.x = Math.max(nsz.x, size.x);
+	    nsz.y = Math.max(nsz.y, size.y);
 	    resize(nsz);
 	}
 	super.mousemove(c);
@@ -870,57 +879,60 @@ public class MapWnd extends WindowX implements Console.Directory {
 	}
 	return(super.mouseup(c, button));
     }
-
+    
     public void markobj(long gobid, long oid, Indir<Resource> resid, String nm) {
 	synchronized(deferred) {
 	    deferred.add(new Runnable() {
-		    double f = 0;
-		    public void run() {
-			Resource res = resid.get();
-			String rnm = nm;
-			if(rnm == null) {
-			    Resource.Tooltip tt = res.layer(Resource.tooltip);
-			    if(tt == null)
-				return;
-			    rnm = tt.t;
-			}
-			double now = Utils.rtime();
-			if(f == 0)
-			    f = now;
-			Gob gob = ui.sess.glob.oc.getgob(gobid);
-			if(gob == null) {
-			    if(now - f < 1.0)
-				throw(new Loading());
+		double f = 0;
+		public void run() {
+		    Resource res = resid.get();
+		    String rnm = nm;
+		    if(rnm == null) {
+			Resource.Tooltip tt = res.layer(Resource.tooltip);
+			if(tt == null)
 			    return;
-			}
-			synchronized(gob) {
-			    gob.setattr(new MarkerID(gob, oid));
-			}
-			Coord tc = gob.rc.floor(tilesz);
-			MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
-			if(!view.file.lock.writeLock().tryLock())
-			    throw(new Loading());
-			try {
-			    MapFile.GridInfo info = view.file.gridinfo.get(obg.id);
-			    if(info == null)
-				throw(new Loading());
-			    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
-			    SMarker prev = view.file.smarkers.get(oid);
-			    if(prev == null) {
-				view.file.add(new SMarker(info.seg, sc, rnm, oid, new Resource.Spec(Resource.remote(), res.name, res.ver)));
-			    } else {
-				if((prev.seg != info.seg) || !eq(prev.tc, sc) || !eq(prev.nm, rnm)) {
-				    prev.seg = info.seg;
-				    prev.tc = sc;
-				    prev.nm = rnm;
-				    view.file.update(prev);
-				}
-			    }
-			} finally {
-			    view.file.lock.writeLock().unlock();
-			}
+			rnm = tt.t;
 		    }
-		});
+		    double now = Utils.rtime();
+		    if(f == 0)
+			f = now;
+		    Gob gob = ui.sess.glob.oc.getgob(gobid);
+		    if(gob == null) {
+			if(now - f < 1.0)
+			    throw(new Loading());
+			return;
+		    }
+		    Coord tc = gob.rc.floor(tilesz);
+		    MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
+		    SMarker mark;
+		    if(!view.file.lock.writeLock().tryLock())
+			throw(new Loading());
+		    try {
+			MapFile.GridInfo info = view.file.gridinfo.get(obg.id);
+			if(info == null)
+			    throw(new Loading());
+			Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
+			SMarker prev = view.file.smarker(res.name, info.seg, sc);
+			if(prev == null) {
+			    mark = new SMarker(info.seg, sc, rnm, oid, new Resource.Spec(Resource.remote(), res.name, res.ver));
+			    view.file.add(mark);
+			} else {
+			    mark = prev;
+			    if((prev.seg != info.seg) || !eq(prev.tc, sc) || !eq(prev.nm, rnm)) {
+				prev.seg = info.seg;
+				prev.tc = sc;
+				prev.nm = rnm;
+				view.file.update(prev);
+			    }
+			}
+		    } finally {
+			view.file.lock.writeLock().unlock();
+		    }
+		    synchronized(gob) {
+			gob.setattr(new MarkerID(gob, mark));
+		    }
+		}
+	    });
 	}
     }
 

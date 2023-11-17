@@ -1,7 +1,6 @@
 <?xml version="1.0" ?>
 
 <project name="hafen" default="deftgt">
-  <property file="build.properties" />
   <property name="ext-lib-base" value="http://www.havenandhearth.com/java" />
 
   <target name="build-env">
@@ -22,12 +21,12 @@
     </condition>
   </target>
 
-  <target name="buildinfo" depends="make-buildinfo" unless="buildinfo-unchanged">
+  <target name="buildinfo">
     <tstamp>
       <format property="version" pattern="dd.MM.yyyy HH:mm" />
     </tstamp>
     <echo message="Updating buildinfo" />
-    <echo file="build/classes/buildinfo" xml:space="default">
+    <echo file="build/classes/buildinfo">
       git-rev = ${git-rev}
       version = ${version}
     </echo>
@@ -104,7 +103,7 @@
     <copy todir="build/classes/haven" file="etc/font.ttf" />
     <copy file="local-boot.properties" tofile="build/classes/haven/boot-props" failonerror="false" quiet="true" />
   </target>
-  
+
   <target name="client-res-java" depends="hafen-client">
     <mkdir dir="resources/classes" />
     <javac srcdir="resources/java" destdir="resources/classes" debug="on" source="1.8" target="1.8" includeantruntime="no">
@@ -129,7 +128,7 @@
     </unjar>
   </target>
 
-  <target name="resources" depends="client-res-java, res-jar">
+  <target name="resources" depends="client-res-java">
     <exec executable="java" failifexecutionfails="false">
       <arg line="-jar resources/LayerUtil.jar -re resources/src/local resources/compiled/res" />
     </exec>
@@ -141,6 +140,8 @@
       <fileset dir="resources/compiled" />
       <fileset dir="resources" includes="item_data/**"/>
       <file file="etc/radar.json"/>
+      <file file="etc/pvp_map.json"/>
+      <file file="etc/pvp_mode_markers.json"/>
       <file file="etc/gob_path.json"/>
       <file file="etc/gob_radius.json"/>
       <file file="etc/autochoose.json"/>
@@ -178,7 +179,7 @@
     <fail unless="lib-builtin-jar" message="builtin-res.jar not available" />
   </target>
 
-  <target name="jars" depends="build-env, jar, extlib/jogl, extlib/lwjgl-gl, resources">
+  <target name="jars" depends="build-env, jar, extlib/jogl, resources, extlib/lwjgl-gl">
     <copy todir="build" failonerror="false" quiet="true">
       <fileset dir="lib">
 	<include name="builtin-res.jar" />
@@ -197,6 +198,7 @@
     <copy todir="bin">
       <fileset dir="build">
 	<include name="hafen.jar" />
+        <include name="client-res.jar" />
       </fileset>
       <fileset dir="lib/ext">
 	<include name="hafen-res.jar" />
@@ -209,19 +211,19 @@
     <chmod file="bin/hafen.jar" perm="a+x" />
   </target>
 
-  <target name="deftgt" depends="jars, bin" />
+  <target name="deftgt" depends="res-jar, jars, bin" />
+  <target name="buildprocess" depends="jars"/>
 
   <target name="run" depends="bin">
     <java jar="bin/hafen.jar" fork="true" />
   </target>
 
   <target name="clean" depends="clean-assets, clean-code">
-    <delete dir="build" />
     <delete dir="lib/ext" />
     <delete dir="bin" />
   </target>
 
-  
+
   <target name="clean-code">
     <delete dir="build/classes" />
     <delete dir="build/classes-lib" />

@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static haven.Inventory.*;
+import static haven.StudyWnd.*;
 import static haven.WItem.*;
 
 public class ExtInventory extends Widget {
@@ -25,7 +26,6 @@ public class ExtInventory extends Widget {
     private static final String CFG_INV = "ext.inv";
     private static final String[] TYPES = new String[]{"Quality", "Name", "Info"};
     //TODO: remove name as it is not really needed
-    private static final List<Widget> INVENTORIES = new LinkedList<>();
     private static final Set<String> EXCLUDES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("Steelbox", "Pouch", "Frame", "Tub", "Fireplace", "Rack", "Pane mold", "Table", "Purse")));
     public final Inventory inv;
     private final ItemGroupList list;
@@ -126,7 +126,7 @@ public class ExtInventory extends Widget {
     
     @Override
     public void unlink() {
-	remInventory(this);
+	ui.gui.remInventory(this);
 	if(chb_show.parent != null) {
 	    chb_show.unlink();
 	}
@@ -138,7 +138,7 @@ public class ExtInventory extends Widget {
     
     @Override
     protected void added() {
-	addInventory(this);
+	ui.gui.addInventory(this);
 	wnd = null;//just in case
 	Window tmp;
 	//do not try to add if we are in small floaty contents widget 
@@ -458,6 +458,7 @@ public class ExtInventory extends Widget {
 	    Curiosity curio = itm.curio.get();
 	    if(curio != null) {
 	        int lph = Curiosity.lph(curio.lph);
+		logCurio(new StudyWnd.CurioInfo(itm));
 	        return RichText.render(String.format("×%s lph: $col[192,255,255]{%d}  mw: $col[255,192,255]{%d}", count, lph, curio.mw), 0).tex();
 	    }
 	    return def;
@@ -670,27 +671,6 @@ public class ExtInventory extends Widget {
 	    return null;
 	}
     }
-    public static void addInventory(Widget ext) {
-	WindowX wnd = ext.getparent(WindowX.class);
-	if(wnd == null) {return;}
-	String name = wnd.cfgName(wnd.caption()).toLowerCase();
-	if(name.contains("inventory")
-	    || name.contains("character sheet")
-	    || name.contains("equipment")
-	    || name.contains("study")) {
-	    return;
-	}
-	INVENTORIES.add(ext);
-    }
-    
-    public static void remInventory(Widget ext) {
-	for (int i = 0; i < INVENTORIES.size(); i++) {
-	    if(INVENTORIES.get(i) == ext) {
-		INVENTORIES.remove(i);
-		return;
-	    }
-	}
-    }
     
     //TODO: should we sort inventories based on z-order of windows?
     private Object[] getTransferTargets() {
@@ -698,14 +678,14 @@ public class ExtInventory extends Widget {
 	if(inv != ui.gui.maininv) {
 	    return null;
 	}
-	if(INVENTORIES.isEmpty()) {
+	if(ui.gui.ExtInventories.isEmpty()) {
 	    return null;
 	}
-	Object[] args = new Object[2 + INVENTORIES.size()];
+	Object[] args = new Object[2 + ui.gui.ExtInventories.size()];
 	int i = 0;
 	args[i++] = 0; //flags
 	args[i++] = 1; //how many to transfer
-	for (Widget wdg : INVENTORIES) {
+	for (Widget wdg : ui.gui.ExtInventories) {
 	    args[i++] = wdg.wdgid();
 	}
 	return args;

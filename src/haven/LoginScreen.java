@@ -37,7 +37,7 @@ public class LoginScreen extends Widget {
 	textf = new Text.Foundry(Text.sans, 16).aa(true),
 	textfs = new Text.Foundry(Text.sans, 14).aa(true);
     public static final Tex bg = Resource.loadtex("gfx/loginscr");
-    public static final Position bgc = new Position(UI.scale(420, 300));
+    public static final Position bgc = new Position(UI.scale(680, 460));
     public final Credbox login;
     public final String hostname;
     private Text error, progress;
@@ -56,10 +56,10 @@ public class LoginScreen extends Widget {
 	this.hostname = hostname;
 	setfocustab(true);
 	add(new Img(bg), Coord.z);
-	optbtn = adda(new Button(UI.scale(100), "Options"), pos("cbl").add(10, -10), 0, 1);
+	optbtn = adda(new Button(UI.scale(100), "Options"), pos("cbl").add(UI.scale(210, -10)), 0, 1);
 	optbtn.setgkey(GameUI.kb_opt);
 	adda(login = new Credbox(), bgc.adds(0, 10), 0.5, 0.0).hide();
-	accounts = add(new AccountList(10));
+	accounts = add(new AccountList(10), UI.scale(200,0));
 	adda(new StatusLabel(hostname, 0.5), bgc.x, bg.sz().y, 0.5, 1);
 	CharterBook.init();
     }

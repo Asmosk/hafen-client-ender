@@ -65,12 +65,15 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     private GobWarning warning = null;
     public StatusUpdates status = new StatusUpdates();
     private final CustomColor customColor = new CustomColor();
+    private final GobCustomScale customScale = new GobCustomScale();
     private final Set<GobTag> tags = new HashSet<>();
     public boolean drivenByPlayer = false;
     public boolean mapProcessed = false;
     public long drives = 0;
     private GobRadius radius = null;
     private long eseq = 0;
+    private GobOpeningOverlay openings;
+    
     public static final ChangeCallback CHANGED = new ChangeCallback() {
 	@Override
 	public void added(Gob ob) {
@@ -164,21 +167,34 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    if(slots != null)
 		slots.remove(slot);
 	}
+ 
+	public String name() {
+	    try {
+		if(res != null)
+		    return res.get().name;
+		else
+		    return "";
+	    } catch (Loading l) {
+		return "";
+	    }
+	}
     }
     
     private static class CustomColor implements SetupMod {
 	Pipe.Op op = null;
 	Color c = null;
     
-	boolean color(Color c) {
-	    boolean changed = !Objects.equals(c, this.c);
+	void color(Color c) {
+	    if(Objects.equals(c, this.c)) {
+		return;
+	    }
+	    
 	    if(c == null) {
 		op = null;
 	    } else {
 		op = new MixColor(c);
 	    }
 	    this.c = c;
-	    return changed;
 	}
     
 	@Override
@@ -263,6 +279,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
 
 	private float getz(Coord2d rc, double ra) {
+	    if (((Boolean)CFG.FLATTEN_TERRAIN.get()).booleanValue())
+		return 0.0F;
 	    Coord2d[][] no = this.obst, ro = new Coord2d[no.length][];
 	    {
 		double s = Math.sin(ra), c = Math.cos(ra);
@@ -276,7 +294,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    for(int i = 0; i < no.length; i++) {
 		for(int o = 0; o < ro[i].length; o++) {
 		    Coord2d a = ro[i][o], b = ro[i][(o + 1) % ro[i].length];
-		    for(Coord2d c : new Coord2d.GridIsect(a, b, MCache.tilesz, false)) {
+		    for(Coord2d c : new Line2d.GridIsect(a, b, MCache.tilesz, false)) {
 			double z = map.getz(surf, c);
 			if(Float.isNaN(ret) || (z < ret))
 			    ret = (float)z;
@@ -295,6 +313,79 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 		this.ca = ra;
 	    }
 	    return(Coord3f.of((float)rc.x, (float)rc.y, this.z));
+	}
+    }
+
+    public static class LinePlace extends DefaultPlace {
+	public final double max, min;
+	public final Coord2d k;
+	private Coord3f c;
+	private Matrix4f r = Matrix4f.id;
+	private int seq = -1;
+	private Coord2d cc;
+	private double ca;
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Coord2d[][] points, Coord2d k) {
+	    super(map, surf);
+	    Line2d l = Line2d.from(Coord2d.z, k);
+	    double max = 0, min = 0;
+	    for(int i = 0; i < points.length; i++) {
+		for(int o = 0; o < points[i].length; o++) {
+		    int p = (o + 1) % points[i].length;
+		    Line2d edge = Line2d.twixt(points[i][o], points[i][p]);
+		    Coord2d t = l.cross(edge);
+		    if((t.y >= 0) && (t.y <= 1)) {
+			max = Math.max(t.x, max);
+			min = Math.min(t.x, min);
+		    }
+		}
+	    }
+	    if((max == 0) || (min == 0))
+		throw(new RuntimeException("illegal bounds for LinePlace"));
+	    this.k = k;
+	    this.max = max;
+	    this.min = min;
+	}
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Resource res, String id, Coord2d k) {
+	    this(map, surf, res.flayer(Resource.obst, id).p, k);
+	}
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Resource res, Coord2d k) {
+	    this(map, surf, res, "", k);
+	}
+
+	private void recalc(Coord2d rc, double ra) {
+	    Coord2d rk = k.rot(ra);
+	    double maxz = map.getz(surf, rc.add(rk.mul(max)));
+	    double minz = map.getz(surf, rc.add(rk.mul(min)));
+	    Coord3f rax = Coord3f.of((float)-rk.y, (float)-rk.x, 0);
+	    float dz = (float)(maxz - minz);
+	    float dx = (float)(max - min);
+	    float hyp = (float)Math.sqrt((dx * dx) + (dz * dz));
+	    float sin = dz / hyp, cos = dx / hyp;
+	    c = Coord3f.of((float)rc.x, (float)rc.y, (float)minz + (dz * (float)(-min / (max - min))));
+	    r = Transform.makerot(new Matrix4f(), rax, sin, cos).mul(super.getr(rc, ra));
+	}
+
+	private void check(Coord2d rc, double ra) {
+	    int mseq = map.chseq;
+	    if((mseq != this.seq) || !Utils.eq(rc, cc) || (ra != ca)) {
+		recalc(rc, ra);
+		this.seq = mseq;
+		this.cc = rc;
+		this.ca = ra;
+	    }
+	}
+
+	public Coord3f getc(Coord2d rc, double ra) {
+	    check(rc, ra);
+	    return(c);
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    check(rc, ra);
+	    return(r);
 	}
     }
 
@@ -404,6 +495,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    addDmg();
 	}
 	setupmods.add(customColor);
+	setupmods.add(customScale);
 	info = new GeneralGobInfo(this);
 	setattr(info);
 	updwait(this::drawableUpdated, waiting -> {});
@@ -577,6 +669,24 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	damage = null;
     }
     
+    private void addOpenings() {
+	this.openings = new GobOpeningOverlay(this);
+	setattr((Class)GobOpeningOverlay.class, (GAttrib)this.openings);
+    }
+    
+    public void proccessOpenings(Fightview.Relation rel) {
+	if (openings == null) {
+	    addOpenings();
+	}
+	rel.openings = openings;
+	openings.update(rel);
+    }
+    
+    public void clearOpenings() {
+	setattr((Class)GobOpeningOverlay.class, null);
+	openings = null;
+    }
+    
     public void rclick() {
 	try {
 	    MapView map = glob.sess.ui.gui.map;
@@ -638,10 +748,11 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     
     public Boolean isMe() {
 	if(isMe == null) {
-	    if(glob.sess.ui.gui == null || glob.sess.ui.gui.map == null || glob.sess.ui.gui.map.plgob < 0) {
+	    GameUI gui = context(GameUI.class);
+	    if(gui == null || gui.map == null || gui.map.plgob < 0) {
 		return null;
 	    } else {
-		isMe = id == glob.sess.ui.gui.map.plgob;
+		isMe = id == gui.map.plgob;
 	    }
 	}
 	return isMe;
@@ -832,9 +943,12 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    return;
 	}
 	if(!Utils.eq(nst, curstate)) {
-	    for(RenderTree.Slot slot : slots)
-		slot.ostate(nst);
-	    this.curstate = nst;
+	    try {
+		for(RenderTree.Slot slot : slots)
+		    slot.ostate(nst);
+		this.curstate = nst;
+	    } catch(Loading l) {
+	    }
 	}
     }
 
@@ -932,9 +1046,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	.add(Session.class, g -> g.glob.sess);
     public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
 
-    @Deprecated
-    public Glob glob() {return(context(Glob.class));}
-
     /* Because generic functions are too nice a thing for Java. */
     public double getv() {
 	Moving m = getattr(Moving.class);
@@ -945,13 +1056,22 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 
     public Collection<Location.Chain> getloc() {
 	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
-	for(RenderTree.Slot slot : slots)
-	    ret.add(slot.state().get(Homo3D.loc));
+	for(RenderTree.Slot slot : slots) {
+	    Location.Chain loc = slot.state().get(Homo3D.loc);
+	    if(loc != null)
+		ret.add(loc);
+	}
 	return(ret);
     }
 
     public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
-	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+	/* XXX: Using a COW list is far from an ideal solution. It
+	 * should work for the specific case of flavobjs (which are
+	 * added asynchronously in a way that makes it difficult to
+	 * lock on each individually), but it's certainly not a
+	 * general solution, and it would be nice with something that
+	 * is in fact more general. */
+	private final Collection<RenderTree.Slot> slots = new java.util.concurrent.CopyOnWriteArrayList<>();
 	private Placement cur;
 
 	private Placed() {}
@@ -1153,11 +1273,15 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     }
     
     private void updateIcon() {
-	if(getattr(GobIcon.class) == null) {
-	    GobIcon icon = Radar.getIcon(this);
-	    if(icon != null) {
-		setattr(icon);
-	    }
+	GobIcon icon = getattr(GobIcon.class);
+	if(icon != null && !icon.isCustom) {
+	    return;
+	}
+	icon = Radar.getIcon(this);
+	if(icon == null) {
+	    delattr(GobIcon.class);
+	} else {
+	    setattr(icon);
 	}
     }
     
@@ -1289,6 +1413,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	if(status.updated(StatusType.drawable, StatusType.hitbox, StatusType.visibility)) {
 	    updateHitbox();
 	}
+ 
+	if(status.updated(StatusType.drawable)) {
+	    customScale.update(this);
+	}
     
 	if(status.updated(StatusType.drawable, StatusType.id, StatusType.icon)) {
 	    updateIcon();
@@ -1329,7 +1457,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 		}
 	    }
 	}
-	if(customColor.color(c)) {updstate();}
+	customColor.color(c);
     }
     
     private static class StatusUpdates {

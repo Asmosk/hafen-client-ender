@@ -33,16 +33,18 @@ import static haven.Sprite.*;
 
 public class ResDrawable extends Drawable implements EquipTarget {
     public final Indir<Resource> res;
+    public final Resource rres;
     public final Sprite spr;
     MessageBuf sdt;
     // private double delay = 0; XXXRENDER
-    private final String resid;
+    private String resid;
 
     public ResDrawable(Gob gob, Indir<Resource> res, Message sdt) {
 	super(gob);
 	this.res = res;
 	this.sdt = new MessageBuf(sdt);
-	spr = Sprite.create(gob, res.get(), this.sdt.clone());
+	this.rres = res.get();
+	spr = Sprite.create(gob, rres, this.sdt.clone());
 	resid = makeResId();
     }
 
@@ -69,7 +71,7 @@ public class ResDrawable extends Drawable implements EquipTarget {
     }
 
     public Resource getres() {
-	return(res.get());
+	return(rres);
     }
 
     @Override
@@ -81,7 +83,7 @@ public class ResDrawable extends Drawable implements EquipTarget {
     @Override
     public String resId() {return resid;}
     
-    public String makeResId() {
+    private String makeResId() {
 	String name = res.get().name;
 	String extra = null;
 	int state =  sdtnum();
@@ -91,6 +93,11 @@ public class ResDrawable extends Drawable implements EquipTarget {
 	    }
 	}
 	return extra == null ? name : String.format("%s[%s]", name, extra);
+    }
+    
+    public void updateResId() {
+	resid = makeResId();
+	gob.idUpdated();
     }
     
     public int sdtnum() {
@@ -115,14 +122,20 @@ public class ResDrawable extends Drawable implements EquipTarget {
     }
 
     public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
-	if(spr instanceof EquipTarget)
-	    return(((EquipTarget)spr).eqpoint(nm, dat));
+	if(spr instanceof EquipTarget) {
+	    Supplier<? extends Pipe.Op> ret = ((EquipTarget)spr).eqpoint(nm, dat);
+	    if(ret != null)
+		return(ret);
+	}
+	Skeleton.BoneOffset bo = rres.layer(Skeleton.BoneOffset.class, nm);
+	if(bo != null)
+	    return(bo.from(null));
 	return(null);
     }
 
     @OCache.DeltaType(OCache.OD_RES)
     public static class $cres implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    int resid = msg.uint16();
 	    MessageBuf sdt = MessageBuf.nil;
 	    if((resid & 0x8000) != 0) {
@@ -135,6 +148,7 @@ public class ResDrawable extends Drawable implements EquipTarget {
 	    if((d != null) && (d.res == res) && !d.sdt.equals(sdt) && (d.spr != null) && (d.spr instanceof Sprite.CUpd)) {
 		((Sprite.CUpd)d.spr).update(sdt);
 		d.sdt = sdt;
+		d.updateResId();
 	    } else if((d == null) || (d.res != res) || !d.sdt.equals(sdt)) {
 		g.setattr(new ResDrawable(g, res, sdt));
 	    }

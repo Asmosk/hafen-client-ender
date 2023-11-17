@@ -255,7 +255,6 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	int fl = sdt.eom() ? 0xffff0000 : decnum(sdt);
 	update(fl);
     }
-    
     public void added(RenderTree.Slot slot) {
 	parts(slot);
 	slots.add(slot);
@@ -300,6 +299,9 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
     }
 
     public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
+	Skeleton.BoneOffset bo = res.layer(Skeleton.BoneOffset.class, nm);
+	if(bo != null)
+	    return(bo.from(pose));
 	return(pose.eqpoint(nm, dat));
     }
 

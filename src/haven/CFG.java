@@ -2,6 +2,7 @@ package haven;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import haven.PathVisualizer.PathCategory;
 import haven.rx.BuffToggles;
@@ -59,7 +60,8 @@ public class CFG<T> {
     public static final CFG<Boolean> MENU_SINGLE_CTRL_CLICK = new CFG<>("ui.menu_single_ctrl_click", true);
     public static final CFG<UI.KeyMod> MENU_SKIP_AUTO_CHOOSE = new CFG<>("ui.menu_skip_auto_choose", UI.KeyMod.SHIFT);
     public static final CFG<Boolean> MENU_ADD_PICK_ALL = new CFG<>("ui.menu_add_pick_all", false);
-    public static final CFG<Boolean> FLAT_CUPBOARDS = new CFG<>("display.gob.flat.cupboard", false);
+    public static final CFG<Integer> CUPBOARD_HEIGHT = new CFG<>("display.cupboard_height", 100);
+    public static final CFG<Integer> PALISADE_HEIGHT = new CFG<>("display.palisade_height", 100);
     
     public static final CFG<Map<String, Map<String, Boolean>>> WARN_CONFIG = new CFG<>("general.warning", new HashMap<>());
     public static final CFG<Boolean> REAL_TIME_CURIO = new CFG<>("ui.real_time_curio", false);
@@ -88,9 +90,28 @@ public class CFG<T> {
     
     public static final CFG<Boolean> AUTOMAP_UPLOAD = new CFG<>("automap.upload", false);
     public static final CFG<Boolean> AUTOMAP_TRACK = new CFG<>("automap.track", false);
+    public static final CFG<Boolean> AUTOFOOD_TRACK = new CFG<>("autofood.track", false);
     public static final CFG<Set<BuddyWnd.Group>> AUTOMAP_MARKERS = new CFG<>("automap.markers", new HashSet<>(), new TypeToken<Set<BuddyWnd.Group>>(){});
     public static final CFG<String> AUTOMAP_ENDPOINT = new CFG<>("automap.andpoint", "");
-
+    
+    // some new additions
+    public static final CFG<Boolean> FLATTEN_TERRAIN = new CFG("display.flatten_terrain", false);
+    public static final CFG<Boolean> ENABLE_TERRAIN_BLEND = new CFG("display.enalbe_terrain_blend", true);
+    public static final CFG<Boolean> ENABLE_BIOME_TRANSITION = new CFG("display.enable_biome_transition", true);
+    public static final CFG<Boolean> MOVE_COMBAT_UI = new CFG<>("combat.ui_movable", false);
+    public static final CFG<Boolean> DRAW_OPENINGS_OVER_GOBS = new CFG<>("combat.openings_over_gobs", false);
+    public static final CFG<Coord> OFFSET_OPENINGS = new CFG<>("combat.offset_openings", new Coord(0,0));
+    public static final CFG<Coord> OFFSET_ACTIONS = new CFG<>("combat.offset_actions", new Coord(0,0));
+    public static final CFG<Boolean> PVP_MAP = new CFG("map.pvp_mode", false);
+    public static final CFG<Boolean> SHOW_PLAYER_NAME = new CFG("map.player_names", false);
+    public static final CFG<Boolean> SHOW_RED_NAME = new CFG("map.red_names", false);
+    public static final CFG<Boolean> SHOW_PARTY_NAMES = new CFG("map.party_names", false);
+    public static final CFG<Boolean> VANILLA_CHAT = new CFG("ui.vanlla_chat", false);
+    public static final CFG<Boolean> RELOCATE_DECALS = new CFG("display.relocate_decals", false);
+    public static final CFG<Boolean> CTRL_CLICK_DECAL = new CFG("general.ctrl_click_decal", false);
+    public static final CFG<Boolean> DISPLAY_CRACKING_TEXTURE = new CFG("display.display_cracking_texture", true);
+    
+    
     private static final String CONFIG_JSON = "config.json";
     private static final Map<Object, Object> cfg;
     private static final Map<String, Object> cache = new HashMap<>();

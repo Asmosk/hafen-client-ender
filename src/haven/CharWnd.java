@@ -31,6 +31,8 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.function.*;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 
@@ -209,11 +211,11 @@ public class CharWnd extends WindowX {
 
 	public void update(Object... args) {
 	    int n = 0;
-	    this.cap = (Float)args[n++];
+	    this.cap = Utils.fv(args[n++]);
 	    List<El> enew = new LinkedList<El>();
 	    while(n < args.length) {
 		Indir<Resource> res = ui.sess.getres((Integer)args[n++]);
-		double a = (Float)args[n++];
+		double a = Utils.fv(args[n++]);
 		enew.add(new El(res, a));
 	    }
 	    this.enew = enew;
@@ -797,6 +799,8 @@ public class CharWnd extends WindowX {
 	public boolean has = false;
 	private String sortkey;
 	private Tex small;
+	
+	public final Pattern pat = Pattern.compile("(• [^•\\n}]*)+");
 
 	private Credo(String nm, Indir<Resource> res, boolean has) {
 	    this.nm = nm;
@@ -805,15 +809,47 @@ public class CharWnd extends WindowX {
 	    this.sortkey = nm;
 	}
 
-	public String rendertext() {
+	public String rendertext(CredoGrid credoGrid) {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
 	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
-	    buf.append(res.flayer(Resource.pagina).text);
+	    buf.append(format(res.flayer(Resource.pagina).text, credoGrid));
 	    return(buf.toString());
 	}
-
+	
+	private String format(String text, CredoGrid credoGrid) {
+	    if(credoGrid.pcr == this) {
+		return format(text, credoGrid.pcl - 1);
+	    }
+	    
+	    if(credoGrid.ccr != null && credoGrid.ccr.contains(this)) {
+		return format(text, Integer.MAX_VALUE);
+	    }
+	    
+	    return text;
+	}
+	
+	private String format(String text, int level) {
+	    if(level < 1) {return text;}
+	    
+	    try {
+		Matcher m = pat.matcher(text);
+		while (level > 0 && m.find()) {
+		    String group = m.group(1);
+		    
+		    level--;
+		    text = text.replaceFirst(Pattern.quote(group), Matcher.quoteReplacement(markDone(group)));
+		}
+		
+	    } catch (Exception ignored) {}
+	    return text;
+	}
+	
+	private String markDone(String txt) {
+	    return String.format("$col[64,255,64]{%s}", txt.replace("•", "✓"));
+	}
+	
 	private Text tooltip = null;
 	public Text tooltip() {
 	    if(tooltip == null)
@@ -1079,8 +1115,6 @@ public class CharWnd extends WindowX {
 	    public Text text;
 
 	    public DefaultCond(Condition cond) {super(cond);}
-	    @Deprecated
-	    public DefaultCond(Widget parent, Condition cond) {super(cond);}
 
 	    protected void added() {
 		super.added();
@@ -1376,7 +1410,7 @@ public class CharWnd extends WindowX {
 			Indir<Resource> wres = ui.sess.getres((Integer)cond[i].wdata[0]);
 			nw[i] = (CondWidget)wres.get().getcode(Widget.Factory.class, true).create(ui, new Object[] {cond[i]});
 		    } else {
-			nw[i] = new DefaultCond(cont, cond[i]);
+			nw[i] = new DefaultCond(cond[i]);
 		    }
 		    y += cont.add(nw[i], new Coord(0, y)).sz.y;
 		}
@@ -2051,7 +2085,7 @@ public class CharWnd extends WindowX {
                             CharWnd.this.skg.sel = null;
                             CharWnd.this.exps.sel = null;
                             if (cr != null)
-                                info.settext(cr::rendertext);
+                                info.settext(() -> cr.rendertext(this));
                             else if (p != null)
                                 info.settext("");
                         }

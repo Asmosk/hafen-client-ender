@@ -313,23 +313,6 @@ public class Resource implements Serializable {
 	}
     }
     
-    public static class CustomizedJarSource extends JarSource {
-	public CustomizedJarSource(String base) {
-	    super(base);
-	}
-	
-	public InputStream get(String name) throws FileNotFoundException {
-	    if(name.contains("gfx/terobjs/cupboard") && !CFG.FLAT_CUPBOARDS.get()) {
-		throw new FileNotFoundException("Could not find resource locally: " + name);
-	    }
-	    return super.get(name);
-	}
-	
-	public String toString() {
-	    return ("'custom' jar source");
-	}
-    }
-    
     public static class HttpSource implements ResSource, Serializable {
 	public static final String USER_AGENT;
 	private final transient SslHelper ssl;
@@ -844,7 +827,7 @@ public class Resource implements Serializable {
 	if(_remote == null) {
 	    synchronized(Resource.class) {
 		if(_remote == null) {
-		    Pool remote = new Pool(local(), new CustomizedJarSource("customized-remote"));
+		    Pool remote = new Pool(local());
 		    if(prscache != null)
 			remote.add(new CacheSource(prscache));
 		    _remote = remote;;
@@ -868,16 +851,6 @@ public class Resource implements Serializable {
 	    src = new Caching(src, prscache);
 	}
 	remote().add(src);
-    }
-
-    @Deprecated
-    public static Resource load(String name, int ver) {
-	return(remote().loadwait(name, ver));
-    }
-
-    @Deprecated
-    public Resource loadwait() {
-	return(this);
     }
 
     public static class LoadException extends RuntimeException {
@@ -1052,6 +1025,7 @@ public class Resource implements Serializable {
 	    id = buf.int16();
 	    o = cdec(buf);
 	    so = UI.scale(o);
+	    boolean hasscale = false;
 	    Map<String, byte[]> kvdata = new HashMap<>();
 	    if((fl & 4) != 0) {
 		while(true) {
@@ -1067,6 +1041,7 @@ public class Resource implements Serializable {
 			tsz = val.coord();
 		    } else if(key.equals("scale")) {
 			scale = val.float32();
+			hasscale = true;
 		    } else {
 			kvdata.put(key, data);
 		    }
@@ -1090,6 +1065,8 @@ public class Resource implements Serializable {
 		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
 	    }
 	    scaled = PUtils.uiscale(img, ssz);
+	    if(false && !hasscale)
+		scaled = PUtils.monochromize(PUtils.coercergba(scaled), java.awt.Color.RED);
 	}
 
 	public BufferedImage scaled() {
@@ -1434,11 +1411,7 @@ public class Resource implements Serializable {
 	    }
 
 	    public static final Instancer<Object> simple = (cl, res, args) -> {
-		try {
-		    Constructor<?> cons = cl.getConstructor(Object[].class);
-		    return(Utils.construct(cons, args));
-		} catch(NoSuchMethodException e) {}
-		return(Utils.construct(cl));
+		return(stdmake(Object.class, cl, res, args));
 	    };
 	}
 	public static final Map<PublishedCode, Instancer> instancers = new WeakHashMap<>();
@@ -1625,7 +1598,7 @@ public class Resource implements Serializable {
 				if(classpath.size() > 0) {
 				    Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
 				    for(Indir<Resource> res : classpath) {
-					loaders.add(res.get().layer(CodeEntry.class).loader());
+					loaders.add(res.get().flayer(CodeEntry.class).loader());
 				    }
 				    ret = new LibClassLoader(ret, loaders);
 				}
@@ -1730,6 +1703,14 @@ public class Resource implements Serializable {
 			ClassLoader l = cl.getClassLoader();
 			if(l instanceof ResClassLoader)
 			    return(((ResClassLoader)l).getres());
+			FromResource src = ResClassLoader.getsource(cl);
+			if(src != null) {
+			    /* XXX? This feels like a hack, but I can't think of
+			     * any better way to let resource code that has been
+			     * downloaded with `get-code' reference data in its
+			     * originating resource. */
+			    return(remote().loadwait(src.name(), src.version()));
+			}
 			throw(new RuntimeException("Cannot fetch resource of non-resloaded class " + cl));
 		    }
 		}));
@@ -1883,6 +1864,9 @@ public class Resource implements Serializable {
     }
 
     public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {
+	if(StaticSpriteCustomization.needReturnNull(this, cl, id)) {
+	    return null;
+	}
 	used = true;
 	for(Layer l : layers) {
 	    if(cl.isInstance(l)) {
