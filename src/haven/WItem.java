@@ -214,7 +214,7 @@ public class WItem extends Widget implements DTarget2 {
 	}
     };
     
-    public final AttrCache<List<ItemInfo>> gilding = new AttrCache<List<ItemInfo>>(this::info, AttrCache.cache(info -> ItemInfo.findall("haven.res.ui.tt.slot.Slotted", info)));
+    public final AttrCache<List<ItemInfo>> gilding = new AttrCache<List<ItemInfo>>(this::info, AttrCache.cache(info -> ItemInfo.findall(ItemData.INFO_CLASS_GILDING, info)));
     
     public final AttrCache<List<ItemInfo>> slots = new AttrCache<List<ItemInfo>>(this::info, AttrCache.cache(info -> ItemInfo.findall("ISlots", info)));
 
@@ -271,7 +271,7 @@ public class WItem extends Widget implements DTarget2 {
 	    g.defstate();
 	    if(olcol.get() != null)
 		g.usestate(new ColorMask(olcol.get()));
-	    if(item.matches) {
+	    if(item.matches()) {
 		g.chcolor(MATCH_COLOR);
 		g.rect(Coord.z, sz);
 		g.chcolor();
@@ -522,10 +522,10 @@ public class WItem extends Widget implements DTarget2 {
     
     private void checkDrop() {
 	if(checkDrop) {
-	    String name = this.name.get(null);
+	    String name = ItemAutoDrop.name(this);
 	    if(name != null) {
 		checkDrop = false;
-		if((!item.matches || !CFG.AUTO_DROP_RESPECT_FILTER.get()) && ItemAutoDrop.needDrop(name)) {
+		if((!item.matches() || !CFG.AUTO_DROP_RESPECT_FILTER.get()) && ItemAutoDrop.needDrop(name)) {
 		    item.drop();
 		}
 	    }

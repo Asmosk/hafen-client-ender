@@ -256,6 +256,13 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	return name.contains(what) || contains.get().is(what);
     }
     
+    public boolean matches() {
+	return matches
+	    || contents != null && contents.children(WItem.class)
+	    .stream()
+	    .anyMatch(wItem -> wItem.item.matches());
+    }
+    
     public void testMatch() {
 	try {
 	    if(filtered < lastFilter && spr != null) {
