@@ -1067,6 +1067,9 @@ public class OptWnd extends WindowX {
 	panel.add(new CFGBox("Enable terrain blending", CFG.ENABLE_TERRAIN_BLEND, "Game looks worse without it, but it may save some computing power... maybe..."), x, y);
 	
 	y += STEP;
+	panel.add(new CFGBox("Don't hide trees that are visible on radar", CFG.SKIP_HIDING_RADAR_TREES), x, y);
+	
+	y += STEP;
 	panel.add(new CFGBox("Enable biome transition", CFG.ENABLE_BIOME_TRANSITION, "You like square tiles? Disable this."), x, y);
  
 	y += STEP;

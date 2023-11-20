@@ -758,6 +758,18 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	return isMe;
     }
 
+    /**returns whether icon for this gob is visible on radar, if there's no icon in config returns null*/
+    public Boolean isOnRadar() {
+	GobIcon icon = getattr(GobIcon.class);
+	GameUI gui = context(GameUI.class);
+	if(icon == null || gui == null) {return null;}
+	try {
+	    GobIcon.Setting s = gui.iconconf.get(icon.res.get());
+	    return s.show;
+	} catch (Loading ignored) {}
+	return null;
+    }
+
     public Placer placer() {
 	Drawable d = getattr(Drawable.class);
 	if(d != null) {
@@ -1250,6 +1262,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	if(anyOf(GobTag.TREE, GobTag.BUSH)) {
 	    Drawable d = drawable;
 	    Boolean needHide = CFG.HIDE_TREES.get();
+	    Boolean onRadar = isOnRadar();
+	    if(onRadar != null && onRadar && CFG.SKIP_HIDING_RADAR_TREES.get()) {
+		needHide = false;
+	    }
 	    if(d != null && d.skipRender != needHide) {
 		d.skipRender = needHide;
 		if(needHide) {
@@ -1394,7 +1410,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    status.update(StatusType.tags);
 	}
     
-	if(status.updated(StatusType.drawable, StatusType.visibility, StatusType.tags)) {
+	if(status.updated(StatusType.drawable, StatusType.visibility, StatusType.tags, StatusType.icon)) {
 	    if(updateVisibility()) {
 		status.update(StatusType.visibility);
 	    }
