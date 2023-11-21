@@ -3,6 +3,7 @@ package haven;
 import auto.Bot;
 import haven.resutil.Curiosity;
 import haven.rx.Reactor;
+import nyakabaka.CurioInfo;
 import rx.Subscription;
 
 import java.awt.*;
@@ -458,7 +459,7 @@ public class ExtInventory extends Widget {
 	    Curiosity curio = itm.curio.get();
 	    if(curio != null) {
 	        int lph = Curiosity.lph(curio.lph);
-		logCurio(new StudyWnd.CurioInfo(itm));
+		CurioInfo.logCurio(new CurioInfo(itm));
 	        return RichText.render(String.format("×%s lph: $col[192,255,255]{%d}  mw: $col[255,192,255]{%d}", count, lph, curio.mw), 0).tex();
 	    }
 	    return def;
