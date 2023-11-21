@@ -108,7 +108,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	public KeyBinding binding() {
 	    return(KeyBinding.get("scm/" + res.name, hotkey()));
 	}
-	@Deprecated public void use() {
+	public void use() {
+	    if(pag.scm.isCrafting(pag)) {
+		pag.scm.lastCraft = pag;
+	    }
 	    pag.scm.wdgmsg("act", (Object[])res.flayer(Resource.action).ad);
 	}
 	public void use(Interaction iact) {
@@ -118,6 +121,9 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		args = Utils.extend(args, iact.mc.floor(OCache.posres));
 		if(iact.click != null)
 		    args = Utils.extend(args, iact.click.clickargs());
+	    }
+	    if(pag.scm.isCrafting(pag)) {
+		pag.scm.lastCraft = pag;
 	    }
 	    pag.scm.wdgmsg("act", args);
 	}
@@ -671,9 +677,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	} else {
 	    r.pag.newp = 0;
 	    r.use(iact);
-	    if(isCrafting(r.pag)) {
-		lastCraft = r.pag;
-	    }
 	    if(reset)
 		change(null);
 	}
@@ -791,7 +794,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     }
 
     public boolean isCrafting(Pagina p) {
-	return (p != null) && (isCrafting(p.res()) || isCrafting(getParent(p)));
+	return (p != null) && (Pagina.name(p).startsWith("paginae/craft/") || isCrafting(p.res()) || isCrafting(getParent(p)));
     }
 
     public boolean isCrafting(Resource res){
@@ -826,6 +829,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public KeyBinding getbinding(Coord cc) {
 	PagButton h = bhit(cc);
 	return((h == null) ? null : h.bind);
+    }
+    
+    public Pagina findPagina(Indir<Resource> res) {
+	if(res == null) {return null;}
+	return pmap.get(res);
     }
     
     public Pagina findPagina(String name) {
