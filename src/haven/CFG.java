@@ -2,7 +2,6 @@ package haven;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import haven.PathVisualizer.PathCategory;
 import haven.rx.BuffToggles;
@@ -29,10 +28,14 @@ public class CFG<T> {
     public static final CFG<Boolean> SHOW_GOB_RADIUS = new CFG<>("display.show_gob_radius", false);
     public static final CFG<Boolean> SHOW_CONTAINER_FULLNESS = new CFG<>("display.container_status", false);
     public static final CFG<Boolean> SIMPLE_CROPS = new CFG<>("display.simple_crops", false);
+    public static final CFG<Integer> DISPLAY_SCALE_CUPBOARDS = new CFG<>("display.scale.cupboards", 100);
+    public static final CFG<Integer> DISPLAY_SCALE_WALLS = new CFG<>("display.scale.walls", 100);
+    public static final CFG<Boolean> DISPLAY_DECALS_ON_TOP = new CFG<>("display.decals_on_top", false);
     public static final CFG<Boolean> STORE_MAP = new CFG<>("general.storemap", false);
     public static final CFG<Boolean> SHOW_TOOLBELT_0 = new CFG<>("general.toolbelt0", true);
     public static final CFG<Boolean> SHOW_TOOLBELT_1 = new CFG<>("general.toolbelt1", false);
     public static final CFG<Boolean> ITEM_DROP_PROTECTION = new CFG<>("general.item_drop_protection", false);
+    public static final CFG<Boolean> DECAL_SHIFT_PICKUP = new CFG<>("general.decal_shift_pickup", false);
     public static final CFG<Boolean> AUTO_PICK_ONLY_RADAR = new CFG<>("general.auto_pick_radar", true);
     public static final CFG<Integer> AUTO_PICK_RADIUS = new CFG<>("general.auto_pick_radius", 55);
     public static final CFG<Boolean> AUTO_DROP_RESPECT_FILTER = new CFG<>("general.auto_drop.filter", true);
@@ -43,7 +46,7 @@ public class CFG<T> {
     public static final CFG<Boolean> ALT_COMBAT_UI = new CFG<>("ui.combat.alt_ui", true);
     public static final CFG<Boolean> SIMPLE_COMBAT_OPENINGS = new CFG<>("ui.combat.simple_openings", true);
     public static final CFG<Boolean> ALWAYS_MARK_COMBAT_TARGET = new CFG<>("ui.combat.always_mark_target", false);
-    public static final CFG<Boolean> SHOW_COMBAT_INFO = new CFG<>("ui.combat.show_info", true);
+    public static final CFG<Boolean> SHOW_COMBAT_INFO = new CFG<>("ui.combat.show_info", false);
     public static final CFG<Boolean> SHOW_COMBAT_DMG = new CFG<>("ui.combat.show_dmg", true);
     public static final CFG<Boolean> CLEAR_PLAYER_DMG_AFTER_COMBAT = new CFG<>("ui.combat.clear_player_damage_after", true);
     public static final CFG<Boolean> CLEAR_ALL_DMG_AFTER_COMBAT = new CFG<>("ui.combat.clear_all_damage_after", false);

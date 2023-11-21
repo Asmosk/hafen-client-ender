@@ -75,7 +75,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public long drives = 0;
     private GobRadius radius = null;
     private long eseq = 0;
-    
     public static final ChangeCallback CHANGED = new ChangeCallback() {
 	@Override
 	public void added(Gob ob) {
@@ -679,7 +678,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public void rclick(int modflags) {
 	try {
 	    MapView map = glob.sess.ui.gui.map;
-	    map.click(this, 3, Coord.z);
+	    map.click(this, 3, Coord.z, modflags);
 	} catch (Exception ignored) {}
     }
     
@@ -888,13 +887,20 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 
 	public Object[] clickargs(ClickData cd) {
 	    Object[] ret = {0, (int)gob.id, gob.rc.floor(OCache.posres), 0, -1};
+	    boolean simpleClick = false;
 	    for(Object node : cd.array()) {
 		if(node instanceof Gob.Overlay) {
+		    if(gob.simplifyClick((Overlay) node)) {simpleClick = true;}
 		    ret[0] = 1;
 		    ret[3] = ((Gob.Overlay)node).id;
 		}
 		if(node instanceof FastMesh.ResourceMesh)
 		    ret[4] = ((FastMesh.ResourceMesh)node).id;
+	    }
+	    if(simpleClick) {
+		ret[0] = 0;
+		ret[3] = 0;
+		ret[4] = -1;
 	    }
 	    return(ret);
 	}

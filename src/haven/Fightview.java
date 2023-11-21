@@ -67,7 +67,6 @@ public class Fightview extends Widget {
 	public Indir<Resource> lastact = null;
 	public double lastuse = 0;
 	public boolean invalid = false;
-	public GobOpeningOverlay openings;
 
         public Relation(long gobid) {
             this.gobid = gobid;
@@ -80,8 +79,6 @@ public class Fightview extends Widget {
 	public void remove() {
 	    buffs.destroy();
 	    relbuffs.destroy();
-	    if (openings != null)
-		openings.destroy();
 	    invalid = true;
 	}
 
@@ -337,9 +334,6 @@ public class Fightview extends Widget {
 	    if(rel.gst == 0 && CFG.COMBAT_AUTO_PEACE.get()) {
 		wdgmsg("give", (int)rel.gobid, 1);
 	    }
-	    Gob target = this.ui.sess.glob.oc.getgob(rel.gobid);
-	    if (target != null)
-		target.proccessOpenings(rel);
             return;
         } else if(msg == "del") {
             Relation rel = getrel(uint32((Integer)args[0]));
