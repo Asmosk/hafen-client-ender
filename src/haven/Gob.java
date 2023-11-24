@@ -1491,11 +1491,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     
     private void updateColor() {
 	Color c = null;
-	if(CFG.DISPLAY_GOB_INFO.get()) {
-	    if(is(GobTag.DRACK)) {
-		if(is(GobTag.EMPTY)) {
-		    c = COL_EMPTY;
-		} else if(is(GobTag.READY)) {
+	if(CFG.SHOW_PROGRESS_COLOR.get() && is(GobTag.PROGRESSING)) {
+	    if(is(GobTag.READY)) {
 		    c = COL_READY;
 		}
 	    }
@@ -1506,7 +1503,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 		    c = COL_FULL;
 		}
 	    }
-	}
 	customColor.color(c);
     }
     
