@@ -1,6 +1,8 @@
 $size[14]{$u{Update for 24.11.23:}
+  * updated CurioInfo UI
+
+$size[14]{$u{Update for 24.11.23:}
   * added skis to radar
-  * made enhanced weapon damage tooltip not apply for ranged weapons and for crafting menus
   * made drink refill action skip full containers
   * made drink refill action consider nearby water barrels
  
