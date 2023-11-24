@@ -157,7 +157,7 @@ public class OptWnd extends WindowX {
 		    Label dpy = new Label.Untranslated("");
 		    final int steps = 4;
 		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
-			prev = new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
+			   prev = new HSlider(UI.scale(160), -2 * steps, 1 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
 			    protected void added() {
 				dpy();
 			    }
@@ -284,15 +284,17 @@ public class OptWnd extends WindowX {
 		prev = add(new Label("Light-source limit"), prev.pos("bl").adds(0, 5).x(0));
 		{
 		    Label dpy = new Label("");
-		    int val = prefs.maxlights.val;
+		    int val = prefs.maxlights.val, max = 32;
 		    if(val == 0) {    /* XXX: This is just ugly. */
 			if(prefs.lightmode.val == GSettings.LightMode.ZONED)
 			    val = Lighting.LightGrid.defmax;
 			else
 			    val = Lighting.SimpleLights.defmax;
 		    }
+		    if(prefs.lightmode.val == GSettings.LightMode.SIMPLE)
+			max = 4;
 		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
-			prev = new HSlider(UI.scale(160), 1, 32, val / 4) {
+			   prev = new HSlider(UI.scale(160), 1, max, val / 4) {
 			    protected void added() {
 				dpy();
 			    }
@@ -941,7 +943,7 @@ public class OptWnd extends WindowX {
 	panel.add(new CFGBox("Item drop protection", CFG.ITEM_DROP_PROTECTION, "Drop items on cursor only when CTRL is pressed"), new Coord(x, y));
  
 	y += STEP;
-	panel.add(new CFGBox("Prevent decal click", CFG.CTRL_CLICK_DECAL, "You can only remove decals from cupboard with CTRL + right click.", true), x, y);
+	panel.add(new CFGBox("Container decal pickup protection", CFG.DECAL_SHIFT_PICKUP, "Require holding CTRL or SHIFT to pickup decals placed on containers."), new Coord(x, y));
 	
 	y += STEP;
 	panel.add(new CFGBox("Enable path queueing", CFG.QUEUE_PATHS, "ALT+LClick will queue movement"), x, y);
@@ -1092,6 +1094,9 @@ public class OptWnd extends WindowX {
 	
 	y += STEP;
 	panel.add(new CFGBox("Display container fullness", CFG.SHOW_CONTAINER_FULLNESS, "Makes containers tint different colors when they are empty or full", true), x, y);
+	
+	y += STEP;
+	panel.add(new CFGBox("Highlight finished objects", CFG.SHOW_PROGRESS_COLOR, "Highlights drying racks and tanning tubs green when they have only finished products inside", true), x, y);
 	
 	y += STEP;
 	tx = panel.add(new CFGBox("Draw paths", CFG.DISPLAY_GOB_PATHS, "Draws lines where objects are moving", true), x, y).sz.x;
