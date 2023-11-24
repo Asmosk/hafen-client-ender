@@ -6,7 +6,7 @@ import nyakabaka.CurioInfo;
 public class StudyWnd extends GameUI.Hidewnd {
     InventoryProxy study;
     StudyInfo info;
-    CurioInfo.CurioInfoWidget curioInfoWidget;
+    CurioInfo.CurioInfoListWidget curioInfoWidget;
     
     StudyWnd() {
 	super(Coord.z, "Study");
@@ -19,8 +19,8 @@ public class StudyWnd extends GameUI.Hidewnd {
 	}
 	study = add(new InventoryProxy(inventory));
 	info = add(new StudyInfo(new Coord(study.sz.x, 66), inventory), 0, study.c.y + study.sz.y + 5);
-	// TODO: Try dynamic widget size?
-	curioInfoWidget = add(new CurioInfo.CurioInfoWidget(new Coord(300, 400), inventory), study.c.x + study.sz.x + 5, 0);
+	int widgetHeight = 4*4*CurioInfo.CurioInfoLineWidget.HEIGHT+CurioInfo.CurioInfoLineWidget.HEIGHT*2;
+	curioInfoWidget = add(new CurioInfo.CurioInfoListWidget(new Coord(350, widgetHeight), inventory), study.c.x + study.sz.x + 5, 0);
 	pack();
     }
 

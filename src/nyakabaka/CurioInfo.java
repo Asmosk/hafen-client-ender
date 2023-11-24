@@ -24,6 +24,9 @@ public class CurioInfo {
     public int sizeX;
     public int sizeY;
     public int time;
+    public String resName;
+    public String cacheId;
+    public Tex icon;
     
     public CurioInfo(WItem item) {
 	name = item.name.get();
@@ -36,6 +39,22 @@ public class CurioInfo {
 	sizeX = item.lsz.x;
 	sizeY = item.lsz.y;
 	time = item.curio.get().time;
+	cacheId = String.format("%s@%s", item.item.resname(), name);
+	try {
+	    GSprite sprite = item.item.sprite();
+	    if(sprite instanceof GSprite.ImageSprite) {
+		icon = GobIcon.SettingsWindow.Icon.tex(((GSprite.ImageSprite) sprite).image());
+	    } else {
+		Resource.Image image = item.item.resource().layer(Resource.imgc);
+		if(image == null) {
+		    icon = GobIcon.SettingsWindow.Icon.tex(WItem.missing.layer(Resource.imgc).img);
+		} else {
+		    icon = GobIcon.SettingsWindow.Icon.tex(image.img);
+		}
+	    }
+	} catch (Loading ignored) {
+	    icon = GobIcon.SettingsWindow.Icon.tex(WItem.missing.layer(Resource.imgc).img);
+	}
     }
     
     public int area() { return sizeX * sizeY; }
@@ -132,32 +151,93 @@ public class CurioInfo {
 	}
     }
     
-    public static class CurioInfoWidget extends Widget {
-	public Widget study;
+    public static class CurioInfoLineWidget extends Widget {
+	private CurioInfo curioInfo;
+	private Coord pos;
+	public static final int HEIGHT = 24;
+	private int bgAlpha;
+	
+	public CurioInfoLineWidget(Coord pos, int width, int bgAlpha, CurioInfo curioInfo) {
+	    super(new Coord(width, HEIGHT));
+	    this.pos = pos;
+	    this.bgAlpha = bgAlpha;
+	    this.curioInfo = curioInfo;
+	}
+	
+	public void draw(GOut g) {
+	    super.draw(g);
+	    
+	    g.chcolor(0,0,0,bgAlpha);
+	    g.frect(pos,sz);
+	    
+	    g.chcolor(255, 255, 255, 255);
+	    g.aimage(curioInfo.icon, pos, 0,0, new Coord(HEIGHT, HEIGHT));
+	    
+	    g.chcolor(255, 255, 255, 255);
+	    g.aimage(
+		new Text.UText<String>(Text.std) {
+		    public String value() { return (curioInfo.name + " Q" + (int) curioInfo.quality);}
+		}.get().tex(),
+		new Coord(pos.x + HEIGHT + 1, pos.y + HEIGHT/2),
+		0,
+		0.5
+	    );
+	    
+	    Tex alignedRight = new Text.UText<String>(Text.std) {
+		public String value() { return ("(" + curioInfo.lph + "lp/h, mw: " + curioInfo.mentalWeight + ")");}
+	    }.get().tex();
+	    g.chcolor(255, 255, 255, 175);
+	    g.aimage(
+		alignedRight,
+		new Coord(sz.x - 2, pos.y + HEIGHT/2),
+		1,
+		0.5
+	    );
+	}
+    }
+    
+    public static class CurioInfoListWidget extends Widget {
+        public Widget study;
+	private final Button clearButton;
+	
 	int maxLph = 0;
-	public CurioInfoWidget(Coord sz, Widget study) {
+	public CurioInfoListWidget(Coord sz, Widget study) {
 	    super(sz);
 	    this.study = study;
+	    
+	    clearButton = add(new Button(100, "Clear"));
+	    clearButton.c = new Coord(sz.x - clearButton.sz.x - 2, sz.y - clearButton.sz.y - 2);
 	    add(new Label("Best Curios:"), 2, 2);
+	}
+ 
+	@Override
+	public void wdgmsg(Widget sender, String msg, Object... args) {
+	    if (sender == clearButton) {
+	        KnownCurios.clear();
+	        OptimalCurios.clear();
+	    } else {
+		super.wdgmsg(sender, msg, args);
+	    }
 	}
 	
 	private void upd() {
 	    CurioInfo.updateOptimalCurios(ui.sess.glob.cattr.get("int").comp);
+	    
 	    maxLph = 0;
-	    // TODO: Cache this
 	    for (CurioInfo curio : CurioInfo.OptimalCurios) {
 		maxLph += curio.lph;
 	    }
+	}
+ 
+	private int lineColor(int number) {
+	    return number % 2 == 0 ? 0 : 40;
 	}
 	
 	public void draw(GOut g) {
 	    upd();
 	    super.draw(g);
 	    
-	    // TODO: Better UI
-	    
 	    Coord pos = new Coord(2, 22);
-	    int gap = 18;
 	    
 	    g.chcolor(255, 255, 255, 255);
 	    g.aimage(
@@ -169,17 +249,12 @@ public class CurioInfo {
 		0
 	    );
 	    
+	    int lineNumber = 1;
 	    for (CurioInfo entry : CurioInfo.OptimalCurios) {
-		g.chcolor(255, 255, 255, 255);
-		g.aimage(
-		    new Text.UText<String>(Text.std) {
-			public String value() { return (entry.name + " Q" + (int) entry.quality + " (" + entry.lph + "lp/h, mw: " + entry.mentalWeight + ")");}
-		    }.get().tex(),
-		    pos,
-		    0,
-		    0
-		);
-		pos = pos.addy(gap);
+		CurioInfoLineWidget newLine = new CurioInfoLineWidget(pos, sz.x, lineColor(lineNumber), entry);
+		newLine.draw(g);
+		pos = pos.addy(CurioInfoLineWidget.HEIGHT);
+		lineNumber++;
 	    }
 	}
     }
