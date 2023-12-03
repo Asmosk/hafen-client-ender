@@ -85,6 +85,7 @@
 	<pathelement path="lib/ext/jogl/gluegen-rt.jar" />
 	<pathelement path="lib/ext/lwjgl/lwjgl-fat.jar" />
 	<pathelement path="lib/ext/lwjgl/lwjgl-opengl-fat.jar" />
+        <pathelement path="lib/ext/lwjgl/lwjgl-awt.jar" />
 	<pathelement path="lib/jglob.jar" />
 	<pathelement path="lib/gson-2.8.6.jar" />
         <pathelement path="lib/rxjava-1.1.5.jar" />
