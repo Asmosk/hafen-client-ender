@@ -136,7 +136,7 @@ public class CraftDBWnd extends WindowX implements DTarget2 {
 	    Resource res = modes[i].res.get();
 	    tabStrip.insert(i,
 		new TexI(PUtils.convolvedown(res.layer(Resource.imgc).img, ICON_SZ, CharWnd.iconfilter)),
-		paginafor(modes[i].res).act().name, null).tag = modes[i];
+		paginafor(modes[i].res).button().act().name, null).tag = modes[i];
 	}
     
 	box = add(new RecipeListBox(UI.scale(200), LIST_SIZE) {
@@ -327,7 +327,7 @@ public class CraftDBWnd extends WindowX implements DTarget2 {
 		if(children.size() == 0) {
 		    children = getPaginaChildren(menu.getParent(p));
 		}
-		children.sort(MenuGrid.sorter);
+		children.sort(Comparator.comparing(pag -> pag.button().sortkey()));
 		if(p != CRAFT) {
 		    children.add(0, BACK);
 		}
@@ -375,7 +375,7 @@ public class CraftDBWnd extends WindowX implements DTarget2 {
 	}
 	if(description == null) {
 	    try {
-		description = ItemData.longtip(descriptionPagina, ui.sess, 20, 5);
+		description = ItemData.longtip(descriptionPagina, ui.sess, true, 20, 5);
 	    } catch (Loading ignored) {}
 	}
 	if(description != null) {
@@ -398,7 +398,7 @@ public class CraftDBWnd extends WindowX implements DTarget2 {
 		Collections.reverse(parents);
 		for(Pagina item : parents) {
 		    BufferedImage img = item.res().layer(Resource.imgc).img;
-		    Resource.AButton act = item.act();
+		    Resource.AButton act = item.button().act();
 		    String name = "...";
 		    if(act != null) {
 			name = act.name;
@@ -477,7 +477,7 @@ public class CraftDBWnd extends WindowX implements DTarget2 {
 		    All.items.clear();
 		    All.items.addAll(
 			menu.paginae.stream()
-			    .filter(p -> category.matcher(Pagina.name(p)).matches())
+			    .filter(p -> category.matcher(Pagina.resname(p)).matches())
 			    .collect(Collectors.toList())
 		    );
 		    
@@ -652,7 +652,7 @@ public class CraftDBWnd extends WindowX implements DTarget2 {
 		if(res != null) {
 		    BufferedImage icon = PUtils.convolvedown(res.layer(Resource.imgc).img, ICON_SZ, CharWnd.iconfilter);
 		    
-		    Resource.AButton act = p.act();
+		    Resource.AButton act = p.button().acts();
 		    String name = "...";
 		    if(act != null) {
 			name = act.name;
@@ -676,8 +676,8 @@ public class CraftDBWnd extends WindowX implements DTarget2 {
 	
 	@Override
 	public int compare(Pagina a, Pagina b) {
-	    String an = a.act().name.toLowerCase();
-	    String bn = b.act().name.toLowerCase();
+	    String an = a.button().act().name.toLowerCase();
+	    String bn = b.button().act().name.toLowerCase();
 	    if(filter != null && !filter.isEmpty()) {
 		boolean ai = an.startsWith(filter);
 		boolean bi = bn.startsWith(filter);

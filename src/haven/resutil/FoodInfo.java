@@ -33,7 +33,7 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
 
-import static haven.CharWnd.Constipations.*;
+import static haven.BAttrWnd.Constipations.*;
 import static haven.PUtils.*;
 import static haven.QualityList.SingleType.*;
 
@@ -70,13 +70,13 @@ public class FoodInfo extends ItemInfo.Tip {
     
     public static class Event {
 	public static final Coord imgsz = new Coord(Text.std.height(), Text.std.height());
-	public final CharWnd.FoodMeter.Event ev;
+	public final BAttrWnd.FoodMeter.Event ev;
 	public final BufferedImage img;
 	public final double a;
 	private final String res;
 	
 	public Event(Resource res, double a) {
-	    this.ev = res.flayer(CharWnd.FoodMeter.Event.class);
+	    this.ev = res.flayer(BAttrWnd.FoodMeter.Event.class);
 	    this.img = PUtils.convolve(res.flayer(Resource.imgc).img, imgsz, CharWnd.iconfilter);
 	    this.a = a;
 	    this.res = res.name;

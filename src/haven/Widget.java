@@ -171,7 +171,9 @@ public class Widget {
 	if(!inited) {
 	    for(Factory f : dolda.jglob.Loader.get(RName.class).instances(Factory.class)) {
 		synchronized(types) {
-		    types.put(f.getClass().getAnnotation(RName.class).value(), f);
+		    String nm = f.getClass().getAnnotation(RName.class).value();
+		    if(types.put(nm, f) != null)
+			Warning.warn("duplicated widget name: " + nm);
 		}
 	    }
 	    inited = true;
@@ -417,7 +419,9 @@ public class Widget {
     }
 
     public void addchild(Widget child, Object... args) {
-	if(args[0] instanceof Coord) {
+	if((args.length > 0) && (args[0] == null)) {
+	    add(child);
+	} if(args[0] instanceof Coord) {
 	    Coord c = (Coord)args[0];
 	    String opt = (args.length > 1) ? (String)args[1] : "";
 	    if(opt.indexOf('u') < 0)
@@ -671,15 +675,15 @@ public class Widget {
 	
     public void uimsg(String msg, Object... args) {
 	if(msg == "tabfocus") {
-	    setfocustab(((Integer)args[0] != 0));
+	    setfocustab(Utils.bv(args[0]));
 	} else if(msg == "act") {
-	    canactivate = (Integer)args[0] != 0;
+	    canactivate = Utils.bv(args[0]);
 	} else if(msg == "cancel") {
-	    cancancel = (Integer)args[0] != 0;
+	    cancancel = Utils.bv(args[0]);
 	} else if(msg == "autofocus") {
-	    autofocus = (Integer)args[0] != 0;
+	    autofocus = Utils.bv(args[0]);
 	} else if(msg == "focus") {
-	    int tid = (Integer)args[0];
+	    int tid = Utils.iv(args[0]);
 	    if(tid < 0) {
 		setfocus(null);
 	    } else {
@@ -692,29 +696,29 @@ public class Widget {
 	} else if(msg == "pack") {
 	    pack();
 	} else if(msg == "z") {
-	    z((Integer)args[0]);
+	    z(Utils.iv(args[0]));
 	} else if(msg == "show") {
-	    show((Integer)args[0] != 0);
+	    show(Utils.bv(args[0]));
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
 	    else
-		cursor = Resource.remote().load((String)args[0], (Integer)args[1]);
+		cursor = Resource.remote().load((String)args[0], Utils.iv(args[1]));
 	} else if(msg == "tip") {
 	    int a = 0;
 	    Object tt = args[a++];
 	    if(tt instanceof String) {
 		settip((String)tt);
 	    } else if(tt instanceof Integer) {
-		tooltip = new PaginaTip(ui.sess.getres((Integer)tt));
+		tooltip = new PaginaTip(ui.sess.getresv(tt));
 	    }
 	} else if(msg == "gk") {
 	    if(args[0] instanceof Integer) {
-		KeyMatch key = gkeymatch((Integer)args[0]);
+		KeyMatch key = gkeymatch(Utils.iv(args[0]));
 		if(args.length > 1) {
 		    int modign = 0;
 		    if(args.length > 2)
-			modign = (Integer)args[2];
+			modign = Utils.iv(args[2]);
 		    setgkey(KeyBinding.get("wgk/" + (String)args[1], key, modign));
 		} else {
 		    gkey = key;
@@ -1115,6 +1119,13 @@ public class Widget {
 	return(Coord.of(x - pad, y + maxh));
     }
 
+    public int addhlp(Coord c, int pad, int w, Widget... children) {
+	int cw = (w - ((children.length - 1) * pad)) / children.length;
+	for(Widget ch : children)
+	    ch.resizew(cw);
+	return(addhl(c, w, children));
+    }
+
     public int addhl(Coord c, int w, Widget... children) {
 	int x = c.x, y = c.y;
 	if(children.length == 1) {
@@ -1369,7 +1380,7 @@ public class Widget {
 			    else
 				text = title + "\n\n" + pag.text;
 			}
-			rend = RichText.render(text, 300).tex();
+			rend = RichText.render(text, UI.scale(300)).tex();
 		    } catch(Loading l) {
 			return(null);
 		    }
@@ -1593,5 +1604,23 @@ public class Widget {
     
     public <T> void listen(String event, Action1<T> callback, Class<T> clazz) {
 	subscriptions.add(Reactor.listen(event, callback, clazz));
+    }
+    
+    public static int poshl(Coord c, int w, Widget... children) {
+	int x = c.x, y = c.y;
+	int maxh = 0, cw = 0;
+	for (Widget child : children) {
+	    cw += child.sz.x;
+	    maxh = Math.max(maxh, child.sz.y);
+	}
+	int tpad = w - cw, npad = children.length - 1, perror = 0;
+	for (Widget child : children) {
+	    child.c = Coord.of(x, y + ((maxh - child.sz.y) / 2));
+	    x += child.sz.x;
+	    perror += tpad;
+	    x += perror / npad;
+	    perror %= npad;
+	}
+	return (y + maxh);
     }
 }
